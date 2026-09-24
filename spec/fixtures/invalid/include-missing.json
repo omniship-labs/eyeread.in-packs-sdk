@@ -1,0 +1,25 @@
+{
+  "description": "The bundle doesn't ship the included pack.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.streaming",
+    "name": "Streaming setup",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "includes": [
+      {
+        "id": "com.example.foot-pedal",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "files": {},
+  "expect": {
+    "valid": false,
+    "code": "include_missing",
+    "stage": "package"
+  }
+}

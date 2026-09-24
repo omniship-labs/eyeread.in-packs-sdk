@@ -1,0 +1,26 @@
+{
+  "description": "files:import with an accept list.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.docx-import",
+    "name": "Word Import",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "main": "main.js",
+    "permissions": {
+      "files:import": {
+        "accept": [".docx", ".txt"]
+      },
+      "scripts:write": {}
+    }
+  },
+  "files": {
+    "main.js": "eyeread.on('files:import', async ({ files }) => {\n  const file = await files.pick();\n  if (file) console.log('picked', file.name);\n});\n"
+  },
+  "expect": {
+    "valid": true
+  }
+}

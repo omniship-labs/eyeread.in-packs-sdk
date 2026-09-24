@@ -1,0 +1,66 @@
+{
+  "description": "Every declared setting type, including a localized label.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.foot-pedal",
+    "name": "Foot Pedal",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "main": "main.js",
+    "permissions": {
+      "prompter:control": {}
+    },
+    "settings": [
+      {
+        "key": "enabled",
+        "type": "toggle",
+        "label": "Enabled",
+        "default": true
+      },
+      {
+        "key": "pedalKey",
+        "type": "select",
+        "label": {
+          "en": "Pedal button",
+          "de": "Pedaltaste"
+        },
+        "options": [
+          {
+            "value": "F13",
+            "label": "F13"
+          },
+          {
+            "value": "Space",
+            "label": "Space"
+          }
+        ],
+        "default": "F13"
+      },
+      {
+        "key": "skipWords",
+        "type": "number",
+        "label": "Words per skip",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "key": "note",
+        "type": "text",
+        "label": "Note",
+        "maxLength": 100,
+        "default": ""
+      }
+    ]
+  },
+  "files": {
+    "main.js": "// Foot Pedal: toggles the prompter from a pedal key.\neyeread.on('prompter:control', ({ prompter }) => {\n  window.addEventListener('keydown', (event) => {\n    if (event.key === 'F13') prompter.control({ action: 'toggle' });\n  });\n});\n"
+  },
+  "expect": {
+    "valid": true
+  }
+}

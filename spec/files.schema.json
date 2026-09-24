@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/omniship-labs/eyeread.in-packs-sdk/spec/files.schema.json",
+  "title": "eyeread.in pack file list (files.json)",
+  "description": "SHA-256 of every file in a pack. This exact file is what gets signed (files.json.minisig). See spec/signing.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "packId", "packVersion", "algorithm", "files"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "packId": { "$ref": "pack.schema.json#/properties/id" },
+    "packVersion": { "$ref": "pack.schema.json#/$defs/semver" },
+    "algorithm": { "const": "sha256" },
+    "files": {
+      "description": "Every file in the pack except files.json and files.json.minisig, keyed by its path relative to the pack root.",
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 500,
+      "propertyNames": {
+        "maxLength": 200,
+        "pattern": "^(?!/)(?!.*(^|/)\\.\\.?(/|$))(?!.*\\\\)[A-Za-z0-9._@/-]+$"
+      },
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+    }
+  }
+}

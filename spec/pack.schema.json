@@ -1,0 +1,357 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/omniship-labs/eyeread.in-packs-sdk/spec/pack.schema.json",
+  "title": "eyeread.in pack manifest (pack.json)",
+  "description": "Describes one eyeread.in pack: who made it, what it may do, which sites it may reach per permission, the settings it declares, and any packs it bundles. See spec/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "id", "name", "version", "author", "license"],
+  "anyOf": [
+    {
+      "required": ["main"]
+    },
+    {
+      "required": ["includes"]
+    }
+  ],
+  "if": {
+    "required": ["permissions"],
+    "properties": {
+      "permissions": {
+        "minProperties": 1,
+        "type": "object"
+      }
+    }
+  },
+  "then": {
+    "required": ["main"]
+  },
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "apiVersion": {
+      "description": "Version of the eyeread.* API and pack format this pack targets.",
+      "const": 1
+    },
+    "id": {
+      "description": "Reverse-DNS identifier, unique per pack, e.g. com.example.foot-pedal. Never changes between versions.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+(-[a-z0-9]+)*)+$"
+    },
+    "name": {
+      "description": "Name shown to users in the install prompt and Settings.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "version": {
+      "$ref": "#/$defs/semver"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "license": {
+      "description": "Packs must be AGPL-licensed, like eyeread.in itself.",
+      "enum": ["AGPL-3.0-only", "AGPL-3.0-or-later"]
+    },
+    "homepage": {
+      "$ref": "#/$defs/httpsUrl"
+    },
+    "repository": {
+      "$ref": "#/$defs/httpsUrl"
+    },
+    "main": {
+      "description": "Entry script, relative to the pack root. Loaded once per sandbox; only the handlers for that sandbox's permission(s) are activated.",
+      "$ref": "#/$defs/relativeJsPath"
+    },
+    "permissions": {
+      "description": "What the pack may do, and per permission which sites it may reach. Internet access is still off until the user turns it on for that permission.",
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/permission"
+      },
+      "properties": {
+        "scripts:write": {
+          "$ref": "#/$defs/permissionGrant"
+        },
+        "prompter:load": {
+          "$ref": "#/$defs/permissionGrant"
+        },
+        "prompter:control": {
+          "$ref": "#/$defs/permissionGrant"
+        },
+        "prompter:events": {
+          "$ref": "#/$defs/permissionGrant"
+        },
+        "files:import": {
+          "$ref": "#/$defs/filesImportGrant"
+        }
+      }
+    },
+    "settings": {
+      "description": "Options the app draws with its own controls on the pack's Settings screen.",
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/setting"
+      }
+    },
+    "includes": {
+      "description": "Other packs bundled with this one (a bundle, like a mod pack). Each is shipped inside the zip as packs/<id>@<version>.zip.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version"],
+        "properties": {
+          "id": {
+            "$ref": "#/properties/id"
+          },
+          "version": {
+            "$ref": "#/$defs/semver"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "httpsUrl": {
+      "type": "string",
+      "maxLength": 2048,
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "relativeJsPath": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.?(/|$))(?!.*\\\\)[A-Za-z0-9._/-]+\\.m?js$"
+    },
+    "permission": {
+      "enum": [
+        "scripts:write",
+        "prompter:load",
+        "prompter:control",
+        "prompter:events",
+        "files:import"
+      ]
+    },
+    "origin": {
+      "description": "An exact https origin: scheme + host (+ optional port). No wildcards, paths, queries, credentials, IP addresses or localhost.",
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^https://(?!localhost(:|$))(?!\\d+\\.\\d+\\.\\d+\\.\\d+(:|$))(?!\\[)([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,63}(:[1-9]\\d{0,4})?$"
+    },
+    "permissionGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "description": "Sites this permission's sandbox may reach once the user turns internet on for it.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/origin"
+          }
+        }
+      }
+    },
+    "filesImportGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "$ref": "#/$defs/permissionGrant/properties/network"
+        },
+        "accept": {
+          "description": "File extensions offered in the app's file picker, e.g. [\".docx\", \".txt\"].",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^\\.[a-z0-9]{1,10}$"
+          }
+        }
+      }
+    },
+    "label": {
+      "description": "Plain text, or a map of locale code to text (must include \"en\").",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        {
+          "type": "object",
+          "required": ["en"],
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      ]
+    },
+    "setting": {
+      "type": "object",
+      "required": ["key", "type", "label", "default"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,39}$"
+        },
+        "type": {
+          "enum": ["toggle", "select", "number", "text"]
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "description": {
+          "$ref": "#/$defs/label"
+        }
+      },
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": true,
+            "label": true,
+            "description": true,
+            "type": {
+              "const": "toggle"
+            },
+            "default": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "required": ["options"],
+          "properties": {
+            "key": true,
+            "label": true,
+            "description": true,
+            "type": {
+              "const": "select"
+            },
+            "options": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 50,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["value", "label"],
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "label": {
+                    "$ref": "#/$defs/label"
+                  }
+                }
+              }
+            },
+            "default": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": {
+            "key": true,
+            "label": true,
+            "description": true,
+            "type": {
+              "const": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "default": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": true,
+            "label": true,
+            "description": true,
+            "type": {
+              "const": "text"
+            },
+            "maxLength": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "default": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          "type": "object"
+        }
+      ]
+    }
+  }
+}

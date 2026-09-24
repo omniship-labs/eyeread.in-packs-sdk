@@ -1,0 +1,98 @@
+{
+  "$comment": "Stable error codes shared by the app's validator and the CLI. 'schema' codes come from pack.json failing pack.schema.json; 'package' codes need the whole pack (files, zip, includes); 'signature' codes need files.json and its signature. Messages may differ; codes must not.",
+  "codes": {
+    "manifest_missing": {
+      "stage": "package",
+      "summary": "The pack has no pack.json at its root."
+    },
+    "manifest_not_json": { "stage": "package", "summary": "pack.json is not valid JSON." },
+    "invalid_manifest": {
+      "stage": "schema",
+      "summary": "pack.json doesn't match the schema (fallback when no more specific code applies)."
+    },
+    "unsupported_api_version": {
+      "stage": "schema",
+      "summary": "apiVersion isn't one this app supports."
+    },
+    "invalid_id": { "stage": "schema", "summary": "id isn't a reverse-DNS identifier." },
+    "invalid_version": { "stage": "schema", "summary": "version isn't semver." },
+    "license_not_agpl": {
+      "stage": "schema",
+      "summary": "license must be AGPL-3.0-only or AGPL-3.0-or-later."
+    },
+    "unknown_permission": {
+      "stage": "schema",
+      "summary": "permissions names an unknown permission."
+    },
+    "invalid_network_origin": {
+      "stage": "schema",
+      "summary": "A network entry isn't an exact https origin (wildcards, paths, http, localhost and IP addresses are rejected)."
+    },
+    "main_required": {
+      "stage": "schema",
+      "summary": "A pack that declares permissions must have a main script; every pack needs main or includes."
+    },
+    "invalid_setting": { "stage": "schema", "summary": "A declared setting is malformed." },
+    "main_not_found": { "stage": "package", "summary": "The main script isn't in the pack." },
+    "path_traversal": {
+      "stage": "package",
+      "summary": "A zip entry escapes the pack folder (e.g. ../)."
+    },
+    "absolute_path": { "stage": "package", "summary": "A zip entry has an absolute path." },
+    "symlink_not_allowed": {
+      "stage": "package",
+      "summary": "The pack contains a symlink or other special file."
+    },
+    "too_large": {
+      "stage": "package",
+      "summary": "The pack or one of its files exceeds a size limit."
+    },
+    "too_many_files": {
+      "stage": "package",
+      "summary": "The pack has more files than allowed."
+    },
+    "minified_code": {
+      "stage": "package",
+      "summary": "A script looks minified or obfuscated; packs must ship readable source."
+    },
+    "setting_key_duplicate": { "stage": "package", "summary": "Two settings share a key." },
+    "setting_default_invalid": {
+      "stage": "package",
+      "summary": "A setting's default isn't one of its options or is outside min/max."
+    },
+    "include_missing": {
+      "stage": "package",
+      "summary": "An included pack isn't in the bundle (packs/<id>@<version>.zip)."
+    },
+    "include_mismatch": {
+      "stage": "package",
+      "summary": "An included pack's pack.json id or version doesn't match the includes entry."
+    },
+    "include_cycle": { "stage": "package", "summary": "Bundles include each other in a loop." },
+    "include_too_deep": {
+      "stage": "package",
+      "summary": "Bundles are nested deeper than allowed."
+    },
+    "file_not_listed": {
+      "stage": "signature",
+      "summary": "A file in the pack is missing from files.json."
+    },
+    "file_missing": {
+      "stage": "signature",
+      "summary": "files.json lists a file that isn't in the pack."
+    },
+    "hash_mismatch": {
+      "stage": "signature",
+      "summary": "A file's SHA-256 doesn't match files.json."
+    },
+    "files_manifest_mismatch": {
+      "stage": "signature",
+      "summary": "files.json packId/packVersion don't match pack.json."
+    },
+    "signature_invalid": {
+      "stage": "signature",
+      "summary": "files.json.minisig is present but doesn't verify against any trusted key."
+    },
+    "revoked": { "stage": "signature", "summary": "The pack's hash is on the revocation list." }
+  }
+}

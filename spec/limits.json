@@ -1,0 +1,15 @@
+{
+  "$comment": "Hard limits every validator (app and CLI) enforces. Values are bytes unless noted.",
+  "maxZipBytes": 10485760,
+  "maxUnpackedBytes": 52428800,
+  "maxFileBytes": 5242880,
+  "maxFiles": 500,
+  "maxPathLength": 200,
+  "maxIncludes": 50,
+  "maxIncludeDepth": 3,
+  "minified": {
+    "$comment": "A .js/.mjs file counts as minified or obfuscated if ANY of these holds.",
+    "maxLineLength": 1000,
+    "maxAverageLineLength": 200
+  }
+}

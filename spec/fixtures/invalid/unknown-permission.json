@@ -1,0 +1,25 @@
+{
+  "description": "library:read isn't a permission; no permission can read the library.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.foot-pedal",
+    "name": "Foot Pedal",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "main": "main.js",
+    "permissions": {
+      "library:read": {}
+    }
+  },
+  "files": {
+    "main.js": "// Foot Pedal: toggles the prompter from a pedal key.\neyeread.on('prompter:control', ({ prompter }) => {\n  window.addEventListener('keydown', (event) => {\n    if (event.key === 'F13') prompter.control({ action: 'toggle' });\n  });\n});\n"
+  },
+  "expect": {
+    "valid": false,
+    "code": "unknown_permission",
+    "stage": "schema"
+  }
+}

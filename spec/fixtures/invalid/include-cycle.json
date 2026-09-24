@@ -1,0 +1,47 @@
+{
+  "description": "A bundle includes itself.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.loop",
+    "name": "Loop",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "includes": [
+      {
+        "id": "com.example.loop",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "files": {},
+  "packs": [
+    {
+      "description": "Itself",
+      "pack": {
+        "apiVersion": 1,
+        "id": "com.example.loop",
+        "name": "Loop",
+        "version": "1.0.0",
+        "author": {
+          "name": "Jane Dev"
+        },
+        "license": "AGPL-3.0-or-later",
+        "includes": [
+          {
+            "id": "com.example.loop",
+            "version": "1.0.0"
+          }
+        ]
+      },
+      "files": {}
+    }
+  ],
+  "expect": {
+    "valid": false,
+    "code": "include_cycle",
+    "stage": "package"
+  }
+}

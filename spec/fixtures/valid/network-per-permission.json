@@ -1,0 +1,26 @@
+{
+  "description": "Internet declared for scripts:write only; prompter:control stays offline.",
+  "pack": {
+    "apiVersion": 1,
+    "id": "com.example.notion-sync",
+    "name": "Notion Sync",
+    "version": "1.0.0",
+    "author": {
+      "name": "Jane Dev"
+    },
+    "license": "AGPL-3.0-or-later",
+    "main": "main.js",
+    "permissions": {
+      "scripts:write": {
+        "network": ["https://api.notion.com"]
+      },
+      "prompter:control": {}
+    }
+  },
+  "files": {
+    "main.js": "eyeread.on('scripts:write', async ({ scripts, net }) => {\n  if (!net) return;\n  const res = await net.fetch('https://api.notion.com/v1/pages/abc');\n  const page = await res.json();\n  await scripts.create({ title: page.title, text: page.text });\n});\n"
+  },
+  "expect": {
+    "valid": true
+  }
+}
