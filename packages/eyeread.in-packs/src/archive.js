@@ -5,7 +5,7 @@
 // limits are enforced on the bytes actually read, not the sizes a zip claims.
 // Mirrors the app's src-tauri/src/packs/archive.rs (step 1 of the spec's
 // check order).
-import { promises as fs } from 'node:fs';
+import { constants as fsConstants, promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import yauzl from 'yauzl';
 import yazl from 'yazl';
@@ -41,6 +41,23 @@ function kindOf(isDirName, modeBits) {
   if (!isDirName && (modeBits === null || modeBits === 0 || modeBits === S_IFREG))
     return 'file';
   return 'special';
+}
+
+// O_NOFOLLOW makes the open itself fail (ELOOP) if the final path component
+// is a symlink, instead of silently following it — and reading through one
+// handle (rather than a separate stat-then-read, or lstat-then-read, on the
+// path) closes the race where the filesystem entry changes between the two.
+const NOFOLLOW_READ = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+
+async function readFileNoFollow(path, maxBytes) {
+  const handle = await fs.open(path, NOFOLLOW_READ);
+  try {
+    const stat = await handle.stat();
+    if (stat.size > maxBytes) throw tooLarge();
+    return await handle.readFile();
+  } finally {
+    await handle.close();
+  }
 }
 
 function readEntryBytes(zipfile, entry, limit) {
@@ -184,11 +201,14 @@ export async function readZip(buffer) {
 }
 
 export async function readZipFile(path) {
-  const stat = await fs.stat(path).catch(() => {
+  let buffer;
+  try {
+    buffer = await readFileNoFollow(path, MAX_ZIP_BYTES);
+  } catch (err) {
+    if (err instanceof PackError) throw err;
+    if (err.code === 'ELOOP') throw new PackError('PACK_LINK_NOT_ALLOWED', { path });
     throw new PackError('INSTALL_IO', {}, `Couldn't open the pack`);
-  });
-  if (stat.size > MAX_ZIP_BYTES) throw tooLarge();
-  const buffer = await fs.readFile(path);
+  }
   return readZip(buffer);
 }
 
@@ -208,9 +228,18 @@ export async function readFolder(root) {
       if (raw.length > MAX_FILES * 4) throw tooManyFiles();
       let bytes = Buffer.alloc(0);
       if (kind === 'file' && !isSkipped(rel)) {
-        const b = await fs.readFile(full);
-        if (b.length > MAX_FILE_BYTES) {
-          throw new PackError('PACK_FILE_TOO_LARGE', { path: rel, limit: mib(MAX_FILE_BYTES) });
+        let b;
+        try {
+          b = await readFileNoFollow(full, MAX_FILE_BYTES);
+        } catch (err) {
+          if (err instanceof PackError) {
+            throw new PackError('PACK_FILE_TOO_LARGE', {
+              path: rel,
+              limit: mib(MAX_FILE_BYTES),
+            });
+          }
+          if (err.code === 'ELOOP') throw new PackError('PACK_LINK_NOT_ALLOWED', { path: rel });
+          throw err;
         }
         total += b.length;
         if (total > MAX_TOTAL_BYTES) throw tooLarge();
