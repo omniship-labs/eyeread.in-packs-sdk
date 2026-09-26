@@ -1,0 +1,24 @@
+{
+  "name": "@omniship-labs/eyeread.in-packs-types",
+  "version": "0.0.0",
+  "description": "TypeScript declarations for the eyeread.in packs eyeread.* API.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "types": "index.d.ts",
+  "files": [
+    "index.d.ts"
+  ],
+  "scripts": {
+    "prepack": "node ../../scripts/copy-spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omniship-labs/eyeread.in-packs-sdk.git",
+    "directory": "packages/eyeread.in-packs-types"
+  },
+  "homepage": "https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/packages/eyeread.in-packs-types#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

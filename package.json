@@ -14,12 +14,20 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test"
+    "build": "node scripts/copy-spec.js",
+    "pretest": "npm run build",
+    "test": "node --test \"test/**/*.test.js\" \"packages/*/test/**/*.test.js\"",
+    "test:spec": "vitest run spec",
+    "test:all": "npm test && npm run test:spec && npm run spec:types",
+    "spec:types": "tsc -p spec/tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "ajv": "^8.20.0",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.9",
+    "typescript": "^5.7.3",
+    "vitest": "^5.0.1"
   }
 }

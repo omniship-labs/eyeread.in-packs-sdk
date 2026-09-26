@@ -1,3 +1,7 @@
 node_modules
 package-lock.json
 LICENSE
+packages/*/spec
+packages/create-eyeread.in-packs/template
+# Test packs: some are deliberately malformed or minified.
+spec/fixtures

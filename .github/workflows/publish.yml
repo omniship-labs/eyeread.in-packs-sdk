@@ -1,0 +1,102 @@
+name: Publish
+
+# Publishes the three packages to npm with provenance, via npm's OIDC
+# "trusted publishing" — no long-lived NPM_TOKEN secret involved. This only
+# works once each package name has a trusted publisher configured on
+# npmjs.com pointing at this repo and *this workflow file* (Settings → a
+# package → Trusted Publisher, on npmjs.com). That one-time setup needs an
+# npm account with publish rights and can't be done from CI; do it before the
+# first run, once per package (create-eyeread.in-packs, eyeread.in-packs,
+# eyeread.in-packs-types). npm supports configuring a trusted publisher for a
+# name that hasn't published yet, so the very first publish (0.0.0, to
+# reserve the names) can also go through this workflow. Both jobs below run
+# from this one file, so registering it once on npmjs.com covers both.
+#
+# Two channels, mirroring how the app repo (omniship-labs/eyeread.in) ships
+# stable vs. glimpse builds:
+#
+# - stable: push a `vX.Y.Z` tag (after bumping every package to that version
+#   and committing it — the `check-tag-version` step refuses to publish a
+#   mismatch). Publishes to npm's default `latest` dist-tag.
+# - dev: every push to `main` publishes automatically, no tag needed, as
+#   `<version>-dev.<short sha>` under the `dev` dist-tag — so a pack author
+#   can track `main` with `npm install @omniship-labs/eyeread.in-packs@dev`
+#   without waiting for a tagged release. It never touches `latest`, and
+#   nothing here is committed back to the repo.
+#
+# workflow_dispatch is a manual escape hatch for either (e.g. re-running a
+# stable publish that failed partway); npm publish is a no-op for a version
+# already on the registry, so re-running is safe.
+
+on:
+  push:
+    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stable:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing
+    strategy:
+      matrix:
+        package:
+          - create-eyeread.in-packs
+          - eyeread.in-packs
+          - eyeread.in-packs-types
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:spec
+      - name: Check every package is at the tagged version
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG_VERSION: ${{ github.ref_name }} # strip the leading "v" below
+        run: TAG_VERSION="${TAG_VERSION#v}" node scripts/check-tag-version.js
+      - name: Publish ${{ matrix.package }}
+        run: npm publish --workspace packages/${{ matrix.package }} --access public --provenance
+
+  dev:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing
+    strategy:
+      matrix:
+        package:
+          - create-eyeread.in-packs
+          - eyeread.in-packs
+          - eyeread.in-packs-types
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:spec
+      - name: Set every package to a <version>-dev.<sha> prerelease
+        env:
+          DEV_SUFFIX: ${{ github.sha }}
+        run: DEV_SUFFIX="${DEV_SUFFIX::7}" node scripts/set-dev-versions.js
+      - name: Publish ${{ matrix.package }} (dev)
+        run: npm publish --workspace packages/${{ matrix.package }} --access public --provenance --tag dev
