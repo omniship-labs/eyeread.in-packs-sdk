@@ -23,7 +23,15 @@ test('scaffolds a pack that the CLI validates', async () => {
 
     const packDir = join(workDir, 'my-pack');
     const files = await readdir(packDir);
-    assert.deepEqual(files.sort(), ['LICENSE', 'README.md', 'main.js', 'pack.json'].sort());
+    assert.deepEqual(
+      files.sort(),
+      ['AGENTS.md', 'LICENSE', 'README.md', 'main.js', 'pack.json'].sort()
+    );
+
+    const agents = await readFile(join(packDir, 'AGENTS.md'), 'utf8');
+    assert.match(agents, /com\.example\.my-pack/);
+    assert.match(agents, /My Pack/);
+    assert.doesNotMatch(agents, /\{\{/, 'no unfilled {{TOKEN}} left in AGENTS.md');
 
     const manifest = JSON.parse(await readFile(join(packDir, 'pack.json'), 'utf8'));
     assert.equal(manifest.id, 'com.example.my-pack');

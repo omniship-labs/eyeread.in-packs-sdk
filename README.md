@@ -18,6 +18,7 @@ and the internet access, that the user grants it.
 | `packages/eyeread.in-packs`        | CLI: `npx @omniship-labs/eyeread.in-packs validate` / `build`                                               |
 | `packages/create-eyeread.in-packs` | Scaffold: `npm create @omniship-labs/eyeread.in-packs my-pack`                                              |
 | `packages/eyeread.in-packs-types`  | Editor autocomplete for the `eyeread.*` API                                                                 |
+| `docs/PACK_AUTHORING.md`           | The pack-writing rules, for any AI coding agent or human                                                    |
 
 The app and these tools both check packs against the spec in `spec/`, using the same fixtures, so
 they always agree on what a valid pack is — see
@@ -37,6 +38,28 @@ npx @omniship-labs/eyeread.in-packs build
 (Until these are published, run them from this repo instead:
 `node packages/create-eyeread.in-packs/src/index.js my-pack`, then
 `node ../../eyeread.in-packs/src/cli.js validate`.)
+
+## Letting an AI agent write the pack for you
+
+The scaffold above writes an `AGENTS.md` into every new pack folder — the sandbox
+rules, the manifest fields, the `eyeread.on(...)` handler shape, and the
+`validate`/`build` workflow, all in one self-contained file. It's plain
+Markdown with no tool-specific format, so **any** coding agent that reads
+project files (Claude Code, Cursor, Codex, Copilot, …) picks it up automatically
+once it's working inside that folder — there's nothing to install. The same
+content lives at [`docs/PACK_AUTHORING.md`](docs/PACK_AUTHORING.md) here, kept
+in sync by hand with the spec.
+
+There's also [`.claude/skills/eyeread-packs/`](.claude/skills/eyeread-packs) — a proper Skill
+(with the full spec bundled as references) that triggers automatically on pack-related requests
+even outside a scaffolded folder, e.g. while working in this SDK repo itself, or before a pack
+folder exists yet. Install it into any of the 75+ agents
+[`skills`](https://github.com/vercel-labs/skills) supports (not just Claude Code) with no checkout
+of this repo:
+
+```bash
+npx skills add https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/.claude/skills/eyeread-packs
+```
 
 ## Develop
 

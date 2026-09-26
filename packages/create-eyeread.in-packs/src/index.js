@@ -18,7 +18,7 @@ const PERMISSIONS = [
   'files:import',
 ];
 
-const TEXT_FILES = new Set(['pack.json', 'main.js', 'README.md']);
+const TEXT_FILES = new Set(['pack.json', 'main.js', 'README.md', 'AGENTS.md']);
 
 function slugify(name) {
   return (
