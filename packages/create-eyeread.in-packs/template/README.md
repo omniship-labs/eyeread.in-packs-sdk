@@ -2,6 +2,11 @@
 
 A pack for [eyeread.in](https://github.com/omniship-labs/eyeread.in).
 
+> Using an AI coding agent (Claude Code, Cursor, Codex, Copilot, …) to work on
+> this pack? Read [`AGENTS.md`](AGENTS.md) first — it has the sandbox and
+> `pack.json` rules the installer enforces, which aren't obvious from the code
+> alone.
+
 ## Develop
 
 Open eyeread.in → **Settings → Packs → Developer mode**, and load this folder.
