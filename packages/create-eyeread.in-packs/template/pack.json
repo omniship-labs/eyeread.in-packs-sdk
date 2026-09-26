@@ -1,0 +1,23 @@
+{
+  "apiVersion": 1,
+  "id": "{{ID}}",
+  "name": "{{NAME}}",
+  "version": "0.1.0",
+  "description": "{{DESCRIPTION}}",
+  "author": { "name": "{{AUTHOR}}" },
+  "license": "AGPL-3.0-or-later",
+  "main": "main.js",
+  "permissions": {
+    "{{PERMISSION}}": {}
+  },
+  "settings": [
+    {
+      "key": "greeting",
+      "type": "text",
+      "label": "Greeting",
+      "description": "Shown when the pack starts.",
+      "default": "Hello from {{NAME}}",
+      "maxLength": 100
+    }
+  ]
+}

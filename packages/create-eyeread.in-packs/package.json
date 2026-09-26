@@ -1,0 +1,27 @@
+{
+  "name": "@omniship-labs/create-eyeread.in-packs",
+  "version": "0.0.0",
+  "description": "Scaffold a new eyeread.in pack: `npm create @omniship-labs/eyeread.in-packs my-pack`.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "create-eyeread.in-packs": "src/index.js"
+  },
+  "files": [
+    "src",
+    "template"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omniship-labs/eyeread.in-packs-sdk.git",
+    "directory": "packages/create-eyeread.in-packs"
+  },
+  "homepage": "https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/packages/create-eyeread.in-packs#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

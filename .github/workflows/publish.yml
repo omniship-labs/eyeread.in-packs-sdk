@@ -1,0 +1,49 @@
+name: Publish
+
+# Publishes the three packages to npm with provenance, via npm's OIDC
+# "trusted publishing" — no long-lived NPM_TOKEN secret involved. This only
+# works once each package name has a trusted publisher configured on
+# npmjs.com pointing at this repo and this workflow file (Settings → a
+# package → Trusted Publisher, on npmjs.com). That one-time setup needs an
+# npm account with publish rights and can't be done from CI; do it before the
+# first run, once per package (create-eyeread.in-packs, eyeread.in-packs,
+# eyeread.in-packs-types). npm supports configuring a trusted publisher for a
+# name that hasn't published yet, so the very first publish (0.0.0, to
+# reserve the names) can also go through this workflow.
+#
+# Run manually (workflow_dispatch) after bumping the versions you want to
+# publish; npm publish is a no-op for a version that's already on the
+# registry, so re-running is safe.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing
+    strategy:
+      matrix:
+        package:
+          - create-eyeread.in-packs
+          - eyeread.in-packs
+          - eyeread.in-packs-types
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:spec
+      - name: Publish ${{ matrix.package }}
+        run: npm publish --workspace packages/${{ matrix.package }} --access public --provenance

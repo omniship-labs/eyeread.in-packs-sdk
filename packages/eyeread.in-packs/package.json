@@ -1,0 +1,37 @@
+{
+  "name": "@omniship-labs/eyeread.in-packs",
+  "version": "0.0.0",
+  "description": "CLI for eyeread.in packs: validate a pack.json/folder against the spec, and build the zip the app installs.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "eyeread.in-packs": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "spec"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "prepack": "node ../../scripts/copy-spec.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "semver": "^7.6.3",
+    "yauzl": "^3.2.0",
+    "yazl": "^3.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omniship-labs/eyeread.in-packs-sdk.git",
+    "directory": "packages/eyeread.in-packs"
+  },
+  "homepage": "https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/packages/eyeread.in-packs#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
