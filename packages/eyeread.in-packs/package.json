@@ -9,7 +9,8 @@
   },
   "files": [
     "src",
-    "spec"
+    "spec",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
