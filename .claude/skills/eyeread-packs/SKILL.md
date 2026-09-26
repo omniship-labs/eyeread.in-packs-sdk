@@ -50,6 +50,17 @@ rules behind any of it:
   declarations for the full `eyeread.*` API, if you want compile-time checking
   or autocomplete context.
 
+## Installing this skill elsewhere
+
+If you're reading this because it's already loaded, you don't need this
+section. To put it in a _different_ environment (any of the 75+ agents
+[vercel-labs/skills](https://github.com/vercel-labs/skills) supports, not just
+Claude Code — no checkout of this repo needed):
+
+```bash
+npx skills add https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/.claude/skills/eyeread-packs
+```
+
 ## The one command that matters most
 
 ```bash

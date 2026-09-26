@@ -50,11 +50,16 @@ once it's working inside that folder — there's nothing to install. The same
 content lives at [`docs/PACK_AUTHORING.md`](docs/PACK_AUTHORING.md) here, kept
 in sync by hand with the spec.
 
-Claude Code users get one more option: [`.claude/skills/eyeread-packs/`](.claude/skills/eyeread-packs)
-is a proper Claude Skill (with the full spec bundled as references) that
-triggers automatically on pack-related requests even outside a scaffolded
-folder — e.g. while working in this SDK repo itself, or before a pack folder
-exists yet.
+There's also [`.claude/skills/eyeread-packs/`](.claude/skills/eyeread-packs) — a proper Skill
+(with the full spec bundled as references) that triggers automatically on pack-related requests
+even outside a scaffolded folder, e.g. while working in this SDK repo itself, or before a pack
+folder exists yet. Install it into any of the 75+ agents
+[`skills`](https://github.com/vercel-labs/skills) supports (not just Claude Code) with no checkout
+of this repo:
+
+```bash
+npx skills add https://github.com/omniship-labs/eyeread.in-packs-sdk/tree/main/.claude/skills/eyeread-packs
+```
 
 ## Develop
 
