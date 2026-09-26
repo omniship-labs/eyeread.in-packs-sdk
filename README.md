@@ -88,6 +88,14 @@ the same pattern as the app repo's stable vs. glimpse builds:
 See the comment at the top of `publish.yml` for the npm trusted-publisher setup each package name
 needs once, first (a human, on npmjs.com — this can't be done from CI).
 
+## Contributing
+
+Pull requests need the [CLA](CLA.md) signed — the same one covering
+[omniship-labs/eyeread.in](https://github.com/omniship-labs/eyeread.in), so
+signing once covers both. A bot checks automatically on your first PR.
+
 ## License
 
 AGPL-3.0-or-later, the same as eyeread.in. Packs must also be AGPL-licensed to be installed.
+Each of the three published packages includes its own copy of `LICENSE` (vendored from the root by
+`npm run build`, like `spec/`), so it's self-contained once installed on its own.

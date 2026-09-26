@@ -1,0 +1,20 @@
+# Code owners — review is required on these paths before merge.
+#
+# These files control CI and npm publishing (including the OIDC trusted
+# publisher scope), and licensing. A change to any of them could alter what
+# gets published or under what terms, so they must be reviewed by a
+# maintainer regardless of who opens the PR. Pair this with a branch
+# protection rule on `main` that requires review from Code Owners.
+#
+# NOTE: update the handle below if the maintainer's GitHub username differs.
+
+# CI / publish automation and the actions they call
+/.github/  @mhalinge
+
+# Publish-time version and file-list gates
+/scripts/check-tag-version.js  @mhalinge
+/scripts/set-dev-versions.js   @mhalinge
+
+# Licensing & legal
+/LICENSE  @mhalinge
+/CLA.md   @mhalinge

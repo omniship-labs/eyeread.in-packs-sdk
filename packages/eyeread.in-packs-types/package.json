@@ -6,7 +6,8 @@
   "type": "module",
   "types": "index.d.ts",
   "files": [
-    "index.d.ts"
+    "index.d.ts",
+    "LICENSE"
   ],
   "scripts": {
     "prepack": "node ../../scripts/copy-spec.js"

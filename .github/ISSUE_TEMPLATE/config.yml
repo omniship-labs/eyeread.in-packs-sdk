@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Commercial License
+    url: mailto:license@omniship.dev?subject=eyeread.in-packs-sdk%20Commercial%20License
+    about: Need to use this SDK in a proprietary product without AGPL obligations? Email us for a commercial license.
+  - name: eyeread.in app issues
+    url: https://github.com/omniship-labs/eyeread.in/issues
+    about: A bug or request about the eyeread.in app itself (not this SDK) belongs in that repo.
+  - name: Discussions
+    url: https://github.com/omniship-labs/eyeread.in-packs-sdk/discussions
+    about: Questions, ideas, or general conversation — use Discussions instead of opening an issue.
