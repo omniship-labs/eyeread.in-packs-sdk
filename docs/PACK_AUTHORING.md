@@ -208,3 +208,8 @@ repo's README if it 404s, that means the package isn't published yet).
    to create the GitHub release with the zip). It opens a public pull request
    on the user's behalf, so don't run it unprompted; `--dry-run` shows what it
    would submit.
+9. After the version is approved, the catalog has its `files.json.minisig`.
+   To make copies installed by hand show as Verified too, run
+   `npx @omniship-labs/eyeread.in-packs add-signature <pack.zip> <files.json.minisig>`
+   and upload the result in place of the release zip. The pack hash doesn't
+   change, and the command refuses a signature made for another version.

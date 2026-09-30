@@ -2,8 +2,10 @@
 // `npx @omniship-labs/eyeread.in-packs validate|build|submit`. Errors and wording
 // come from the shared spec (spec/errors.json), so this prints the same
 // thing the app's installer would.
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { addSignature } from './addSignature.js';
+import { readZipFile } from './archive.js';
 import { buildPack } from './build.js';
 import { PackError } from './errors.js';
 import { submit, SubmitError } from './submit.js';
@@ -13,6 +15,8 @@ const USAGE = `usage:
   eyeread.in-packs validate [path]   check a pack folder or .zip (default: .)
   eyeread.in-packs build [path] [-o|--out <file>]
                                      build a pack folder into a zip (default: ./<id>-<version>.zip)
+  eyeread.in-packs add-signature <pack.zip> <files.json.minisig> [-o|--out <file>]
+                                     add a reviewed version's signature to its zip (default: replaces the zip)
   eyeread.in-packs submit [path] [--tag <tag>] [--url <zip url>] [--release] [--dry-run]
                                      open a pull request to get a released version Verified`;
 
@@ -37,7 +41,7 @@ function parseArgs(argv) {
       positional.push(arg);
     }
   }
-  return { command, path: positional[0] ?? '.', out, submitOpts };
+  return { command, path: positional[0] ?? '.', positional, out, submitOpts };
 }
 
 function printReport(label, bundle) {
@@ -67,8 +71,22 @@ async function runBuild(path, out) {
   printReport(' ', bundle);
 }
 
+async function runAddSignature(positional, out) {
+  const [zip, sig] = positional;
+  if (!zip || !sig) throw new Error('add-signature needs <pack.zip> <files.json.minisig>');
+  const { bytes, bundle } = await addSignature(
+    await readZipFile(resolve(zip)),
+    await readFile(resolve(sig)),
+    undefined
+  );
+  const outPath = resolve(out ?? zip);
+  await writeFile(outPath, bytes);
+  console.log(`Signed ${outPath}`);
+  printReport(' ', bundle);
+}
+
 async function main() {
-  const { command, path, out, submitOpts } = parseArgs(process.argv.slice(2));
+  const { command, path, positional, out, submitOpts } = parseArgs(process.argv.slice(2));
   if (command === 'help' || !command) {
     console.log(USAGE);
     process.exitCode = command ? 0 : 1;
@@ -77,6 +95,7 @@ async function main() {
   try {
     if (command === 'validate') await runValidate(path);
     else if (command === 'build') await runBuild(path, out);
+    else if (command === 'add-signature') await runAddSignature(positional, out);
     else if (command === 'submit') await submit(resolve(path), submitOpts);
     else {
       console.error(`eyeread.in-packs: unknown command "${command}"\n\n${USAGE}`);
