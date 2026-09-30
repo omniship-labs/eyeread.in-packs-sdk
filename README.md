@@ -76,14 +76,14 @@ npm run spec:types  # eyeread.d.ts compiles
 ## Versioning and publishing
 
 Every package here versions and publishes together (the CLI and types both follow the spec's
-`apiVersion`), via [`.github/workflows/publish.yml`](.github/workflows/publish.yml) — two channels,
-the same pattern as the app repo's stable vs. glimpse builds:
+`apiVersion`), via [`.github/workflows/publish.yml`](.github/workflows/publish.yml):
 
-- **stable**, on npm's `latest` tag: bump every package to the same version, commit, then push a
-  `vX.Y.Z` tag. The workflow refuses to publish if any package's version doesn't match the tag.
-- **dev**, on npm's `dev` tag: every push to `main` publishes automatically as
-  `<version>-dev.<short sha>` — no tag, no version bump needed. Try it with
-  `npm install @omniship-labs/eyeread.in-packs@dev`.
+1. Bump every package to the same version and commit it:
+   `npm version 0.1.0 --workspaces --no-git-tag-version`.
+2. Push a `vX.Y.Z` tag. The workflow runs the tests, refuses to continue if any package's version
+   doesn't match the tag, and **stages** all three on npm with provenance.
+3. A maintainer approves each staged version on npmjs.com with 2FA (or `npm stage list`, then
+   `npm stage approve <stage-id>`). Only then does it go live on npm's `latest` tag.
 
 See the comment at the top of `publish.yml` for the npm trusted-publisher setup each package name
 needs once, first (a human, on npmjs.com — this can't be done from CI).

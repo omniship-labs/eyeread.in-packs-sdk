@@ -13,7 +13,6 @@
 
 # Publish-time version and file-list gates
 /scripts/check-tag-version.js  @mhalinge
-/scripts/set-dev-versions.js   @mhalinge
 
 # Licensing & legal
 /LICENSE  @mhalinge
