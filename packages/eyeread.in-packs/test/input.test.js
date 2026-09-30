@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseManifest } from '../src/manifest.js';
+import { validateEntries } from '../src/validate.js';
 
 const app = '1.0.0';
 const manifest = (extra) =>
@@ -88,4 +89,91 @@ test('key settings take a key code, or nothing', () => {
     settings: [{ key: 'k', type: 'key', label: 'K', default: 'Not A Key' }],
   });
   assert.equal(code(bad), 'PACK_MANIFEST_SCHEMA');
+});
+
+test('a pack that reads input cant declare network on any permission', () => {
+  const m = perms({
+    'input:keyboard': { keys: ['Space'] },
+    'scripts:write': { network: ['https://api.example.com'] },
+  });
+  assert.equal(code(m), 'PACK_INPUT_PACK_NETWORK');
+  // The permission-level case keeps its own code.
+  assert.equal(
+    code(perms({ 'input:keyboard': { network: ['https://api.example.com'] } })),
+    'PACK_INPUT_NETWORK'
+  );
+  // Network without input is fine, and so is input with no sites anywhere.
+  assert.equal(
+    code(
+      perms({
+        'scripts:write': { network: ['https://api.example.com'] },
+        'prompter:events': {},
+      })
+    ),
+    null
+  );
+  assert.equal(
+    code(
+      perms({ 'input:keyboard': {}, 'scripts:write': { network: [] }, 'prompter:control': {} })
+    ),
+    null
+  );
+});
+
+// top -> a -> b, each with the given permissions.
+function chain(top, a, b) {
+  const pack = (id, permissions, includes = []) => [
+    { path: 'LICENSE', bytes: Buffer.from('GNU AFFERO GENERAL PUBLIC LICENSE\n') },
+    { path: 'main.js', bytes: Buffer.from(`// ${id}\n`) },
+    {
+      path: 'pack.json',
+      bytes: Buffer.from(
+        JSON.stringify({
+          apiVersion: 1,
+          id,
+          name: id,
+          version: '1.0.0',
+          author: { name: 'T' },
+          license: 'AGPL-3.0-only',
+          main: 'main.js',
+          permissions,
+          ...(includes.length
+            ? { includes: includes.map((i) => ({ id: i, version: '1.0.0' })) }
+            : {}),
+        })
+      ),
+    },
+  ];
+  const nested = (id, files) =>
+    files.map((e) => ({ path: `packs/${id}/${e.path}`, bytes: e.bytes }));
+  return [
+    ...pack('com.example.top', top, ['com.example.a']),
+    ...nested('com.example.a', pack('com.example.a', a, ['com.example.b'])),
+    ...nested('com.example.b', pack('com.example.b', b)),
+  ];
+}
+const bundleCode = (entries) => {
+  try {
+    validateEntries(entries, app);
+  } catch (e) {
+    return [e.code, e.message];
+  }
+  return [null, ''];
+};
+
+test('a pack that reads input cant include a pack with network, at any depth', () => {
+  const input = { 'input:keyboard': {} };
+  const net = { 'scripts:write': { network: ['https://api.example.com'] } };
+
+  // The top reads input; the network is two levels down.
+  const [deep, message] = bundleCode(chain(input, {}, net));
+  assert.equal(deep, 'PACK_INPUT_PACK_NETWORK');
+  assert.ok(message.startsWith('packs/com.example.b/'), message);
+
+  // A pack in the middle reads input and includes the network pack.
+  assert.equal(bundleCode(chain({}, input, net))[0], 'PACK_INPUT_PACK_NETWORK');
+
+  // No input anywhere: network in a bundle is fine.
+  assert.equal(bundleCode(chain({}, net, net))[0], null);
+  assert.equal(bundleCode(chain(input, {}, input))[0], null);
 });

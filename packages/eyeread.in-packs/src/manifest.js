@@ -59,6 +59,7 @@ export function parseManifest(bytes, appVersion) {
     for (const [permission, decl] of Object.entries(value.permissions)) {
       checkPermissionOptions(permission, decl);
     }
+    checkInputPack(value.permissions);
   }
 
   if (!validatePack(value)) {
@@ -115,6 +116,17 @@ function checkPermissionOptions(permission, decl) {
             : true; // network, and unknown fields (the schema rejects those)
     if (!allowed) throw new PackError('PACK_PERMISSION_OPTION', { permission, option });
   }
+}
+
+// A pack that reads input can't declare `network` on any permission. The
+// sandbox split alone isn't enough: sandboxes share app state (the prompter's
+// position, script titles), so input could be encoded into state and read back
+// out by a sandbox that has `net`. The same goes for every pack it includes;
+// validate.js checks that once the bundle is read.
+function checkInputPack(permissions) {
+  if (!Object.keys(permissions).some(isInputPermission)) return;
+  const hasSites = (decl) => Array.isArray(decl?.network) && decl.network.length > 0;
+  if (Object.values(permissions).some(hasSites)) throw new PackError('PACK_INPUT_PACK_NETWORK');
 }
 
 function checkSettings(settings) {
