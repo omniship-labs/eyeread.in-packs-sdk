@@ -69,3 +69,8 @@ Once `validate` is clean, `build` writes the installable zip
 it in the real app via **Settings → Packs → Developer mode** → load this
 folder — no build or install step needed for that, it reloads live as you edit
 `main.js`.
+
+Getting the pack **Verified** is a separate, public step: see "Publish" in
+`README.md`. `npx @omniship-labs/eyeread.in-packs submit` opens a pull request
+on the user's behalf (and `--release` publishes a GitHub release), so only run
+it when the user asks you to submit the pack.

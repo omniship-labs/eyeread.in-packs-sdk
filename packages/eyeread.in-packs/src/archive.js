@@ -221,6 +221,9 @@ export async function readFolder(root) {
     const { dir, prefix } = stack.pop();
     const items = await fs.readdir(dir, { withFileTypes: false });
     for (const name of items) {
+      // A pack folder can be a git repo's root: its .git (a folder, or a file
+      // in a worktree or submodule) isn't part of the pack.
+      if (prefix === '' && name === '.git') continue;
       const rel = `${prefix}${name}`;
       const full = join(dir, name);
       const meta = await fs.lstat(full); // never follow a link out of the folder

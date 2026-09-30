@@ -203,3 +203,8 @@ repo's README if it 404s, that means the package isn't published yet).
 6. `build` once `validate` is clean, to confirm the zip itself is well-formed.
 7. Tell the user how to try it: eyeread.in → **Settings → Packs → Developer
    mode** → load the pack's folder (no store submission needed to test locally).
+8. Only if the user asks to get it **Verified**: commit, tag `v<version>`, push
+   the tag, then `npx @omniship-labs/eyeread.in-packs submit` (add `--release`
+   to create the GitHub release with the zip). It opens a public pull request
+   on the user's behalf, so don't run it unprompted; `--dry-run` shows what it
+   would submit.

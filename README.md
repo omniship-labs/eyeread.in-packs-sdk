@@ -15,7 +15,7 @@ and the internet access, that the user grants it.
 | Path                               | What it is                                                                                                  |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `spec/`                            | The pack format: `pack.json` schema, signing layout, `eyeread.*` API types, sandbox protocol, test fixtures |
-| `packages/eyeread.in-packs`        | CLI: `npx @omniship-labs/eyeread.in-packs validate` / `build`                                               |
+| `packages/eyeread.in-packs`        | CLI: `npx @omniship-labs/eyeread.in-packs validate` / `build` / `submit`                                    |
 | `packages/create-eyeread.in-packs` | Scaffold: `npm create @omniship-labs/eyeread.in-packs my-pack`                                              |
 | `packages/eyeread.in-packs-types`  | Editor autocomplete for the `eyeread.*` API                                                                 |
 | `docs/PACK_AUTHORING.md`           | The pack-writing rules, for any AI coding agent or human                                                    |

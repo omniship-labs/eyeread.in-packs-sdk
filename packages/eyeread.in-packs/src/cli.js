@@ -1,33 +1,43 @@
 #!/usr/bin/env node
-// `npx @omniship-labs/eyeread.in-packs validate|build`. Errors and wording
+// `npx @omniship-labs/eyeread.in-packs validate|build|submit`. Errors and wording
 // come from the shared spec (spec/errors.json), so this prints the same
 // thing the app's installer would.
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { buildPack } from './build.js';
 import { PackError } from './errors.js';
+import { submit, SubmitError } from './submit.js';
 import { validateFolder, validateZipFile } from './validate.js';
 
 const USAGE = `usage:
   eyeread.in-packs validate [path]   check a pack folder or .zip (default: .)
   eyeread.in-packs build [path] [-o|--out <file>]
-                                     build a pack folder into a zip (default: ./<id>-<version>.zip)`;
+                                     build a pack folder into a zip (default: ./<id>-<version>.zip)
+  eyeread.in-packs submit [path] [--tag <tag>] [--url <zip url>] [--release] [--dry-run]
+                                     open a pull request to get a released version Verified`;
 
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const positional = [];
   let out;
+  const submitOpts = {};
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '-o' || arg === '--out') {
       out = rest[++i];
+    } else if (arg === '--tag' || arg === '--url') {
+      submitOpts[arg.slice(2)] = rest[++i];
+    } else if (arg === '--release') {
+      submitOpts.release = true;
+    } else if (arg === '--dry-run') {
+      submitOpts.dryRun = true;
     } else if (arg === '-h' || arg === '--help') {
       return { command: 'help' };
     } else {
       positional.push(arg);
     }
   }
-  return { command, path: positional[0] ?? '.', out };
+  return { command, path: positional[0] ?? '.', out, submitOpts };
 }
 
 function printReport(label, bundle) {
@@ -58,7 +68,7 @@ async function runBuild(path, out) {
 }
 
 async function main() {
-  const { command, path, out } = parseArgs(process.argv.slice(2));
+  const { command, path, out, submitOpts } = parseArgs(process.argv.slice(2));
   if (command === 'help' || !command) {
     console.log(USAGE);
     process.exitCode = command ? 0 : 1;
@@ -67,6 +77,7 @@ async function main() {
   try {
     if (command === 'validate') await runValidate(path);
     else if (command === 'build') await runBuild(path, out);
+    else if (command === 'submit') await submit(resolve(path), submitOpts);
     else {
       console.error(`eyeread.in-packs: unknown command "${command}"\n\n${USAGE}`);
       process.exitCode = 1;
@@ -75,6 +86,8 @@ async function main() {
   } catch (err) {
     if (err instanceof PackError) {
       console.error(`✗ ${err}`);
+    } else if (err instanceof SubmitError) {
+      console.error(`✗ ${err.message}`);
     } else {
       console.error(`✗ ${err.message ?? err}`);
     }
