@@ -3,13 +3,8 @@
 // src-tauri/src/packs/manifest.rs (steps 2-6 of the spec's check order).
 import semver from 'semver';
 import { PackError } from './errors.js';
-import {
-  PERMISSIONS,
-  SUPPORTED_API_VERSIONS,
-  isInputPermission,
-  siteIsValid,
-  validatePack,
-} from './schema.js';
+import { hasSites, tooWide } from './input.js';
+import { PERMISSIONS, SUPPORTED_API_VERSIONS, siteIsValid, validatePack } from './schema.js';
 
 export { PERMISSIONS };
 
@@ -97,36 +92,39 @@ export function parseManifest(bytes, appVersion) {
   return manifest;
 }
 
-// Input permissions can't declare `network`, and each option belongs to
-// particular permissions. The schema can't say either.
+// `input` belongs to `prompter:control` only, and needs keyboard or mouse. The
+// schema can't say the first, and its message for the second prints the whole
+// object.
+const INPUT_PERMISSION = 'prompter:control';
+
 function checkPermissionOptions(permission, decl) {
   if (!decl || typeof decl !== 'object' || Array.isArray(decl)) return;
-  const input = isInputPermission(permission);
-  if (input && Object.hasOwn(decl, 'network')) {
-    throw new PackError('PACK_INPUT_NETWORK', { permission });
+  if (!Object.hasOwn(decl, 'input')) return;
+  if (permission !== INPUT_PERMISSION) {
+    throw new PackError('PACK_PERMISSION_OPTION', { permission, option: 'input' });
   }
-  for (const option of Object.keys(decl)) {
-    const allowed =
-      option === 'scope'
-        ? input
-        : option === 'keys'
-          ? permission === 'input:keyboard'
-          : option === 'buttons' || option === 'position'
-            ? permission === 'input:mouse'
-            : true; // network, and unknown fields (the schema rejects those)
-    if (!allowed) throw new PackError('PACK_PERMISSION_OPTION', { permission, option });
+  const input = decl.input;
+  if (input && typeof input === 'object' && !input.keyboard && !input.mouse) {
+    throw new PackError('PACK_MANIFEST_SCHEMA', {
+      pointer: `/permissions/${permission}/input`,
+      detail: 'needs keyboard or mouse',
+    });
   }
 }
 
-// A pack that reads input can't declare `network` on any permission. The
-// sandbox split alone isn't enough: sandboxes share app state (the prompter's
-// position, script titles), so input could be encoded into state and read back
-// out by a sandbox that has `net`. The same goes for every pack it includes;
+// A pack that declares `network` anywhere can read input only if the input is
+// narrow (`tooWide`). The sandbox split alone isn't enough to keep input in:
+// sandboxes share app state (the prompter's position), so input could be
+// encoded into state and read back out by a sandbox that has `net`. Narrow
+// input leaks next to nothing. The same goes for every pack it includes;
 // validate.js checks that once the bundle is read.
 function checkInputPack(permissions) {
-  if (!Object.keys(permissions).some(isInputPermission)) return;
-  const hasSites = (decl) => Array.isArray(decl?.network) && decl.network.length > 0;
-  if (Object.values(permissions).some(hasSites)) throw new PackError('PACK_INPUT_PACK_NETWORK');
+  if (!Object.values(permissions).some(hasSites)) return;
+  for (const decl of Object.values(permissions)) {
+    if (!decl?.input || typeof decl.input !== 'object') continue;
+    const reason = tooWide(decl.input);
+    if (reason) throw new PackError('PACK_INPUT_PACK_NETWORK', { reason });
+  }
 }
 
 function checkSettings(settings) {

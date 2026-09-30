@@ -1,11 +1,12 @@
-// Input permissions (keyboard, mouse, MIDI, gamepad): no network, options only
-// where they belong, and `key` settings.
+// Input (keyboard and mouse) on `prompter:control`: where it may go, what it
+// must name when the pack also reaches the internet, and `key` settings.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseManifest } from '../src/manifest.js';
 import { validateEntries } from '../src/validate.js';
 
 const app = '1.0.0';
+const NET = { network: ['https://api.example.com'] };
 const manifest = (extra) =>
   Buffer.from(
     JSON.stringify({
@@ -20,61 +21,108 @@ const manifest = (extra) =>
     })
   );
 const perms = (permissions) => manifest({ permissions });
-const code = (bytes) => {
+const control = (input, extra = {}) => ({ 'prompter:control': { input, ...extra } });
+const parse = (bytes) => {
   try {
     parseManifest(bytes, app);
   } catch (e) {
-    return e.code;
+    return [e.code, e.message];
   }
-  return null;
+  return [null, ''];
 };
+const code = (bytes) => parse(bytes)[0];
+const keys = (n) => Array.from({ length: n }, (_, i) => `F${i + 1}`);
 
-test('input permissions parse with their options', () => {
+test('input parses on prompter:control', () => {
   const m = parseManifest(
-    perms({
-      'input:keyboard': { keys: ['ArrowRight', 'Space'], scope: 'global' },
-      'input:mouse': { buttons: [3, 4], position: true },
-      'input:midi': {},
-      'input:gamepad': {},
-    }),
+    perms(
+      control({
+        keyboard: { keys: ['ArrowRight', 'Space'] },
+        mouse: { buttons: [3, 4], wheel: true, position: true },
+        scope: 'global',
+      })
+    ),
     app
   );
-  assert.deepEqual(m.permissions['input:keyboard'].keys, ['ArrowRight', 'Space']);
-  assert.equal(m.permissions['input:mouse'].position, true);
+  const input = m.permissions['prompter:control'].input;
+  assert.deepEqual(input.keyboard.keys, ['ArrowRight', 'Space']);
+  assert.equal(input.mouse.position, true);
 });
 
-test("input permissions can't declare network, even an empty list", () => {
-  for (const p of ['input:keyboard', 'input:mouse', 'input:midi', 'input:gamepad']) {
+test('input belongs to prompter:control only', () => {
+  for (const p of ['scripts:write', 'prompter:load', 'prompter:events', 'files:import']) {
     assert.equal(
-      code(perms({ [p]: { network: ['https://api.example.com'] } })),
-      'PACK_INPUT_NETWORK'
+      code(perms({ [p]: { input: { keyboard: {} } } })),
+      'PACK_PERMISSION_OPTION',
+      p
     );
   }
-  assert.equal(code(perms({ 'input:midi': { network: [] } })), 'PACK_INPUT_NETWORK');
 });
 
-test('options belong to their permissions', () => {
-  const cases = [
-    ['input:midi', { keys: ['KeyA'] }],
-    ['input:mouse', { keys: ['KeyA'] }],
-    ['input:keyboard', { buttons: [0] }],
-    ['input:keyboard', { position: true }],
-    ['scripts:write', { scope: 'global' }],
-  ];
-  for (const [p, decl] of cases) {
-    assert.equal(code(perms({ [p]: decl })), 'PACK_PERMISSION_OPTION', p);
-  }
-});
-
-test('bad key codes, duplicates, scopes and buttons fail the schema', () => {
-  for (const decl of [
-    { keys: ['Not A Key'] },
-    { keys: ['KeyA', 'KeyA'] },
-    { scope: 'everywhere' },
+test('input needs keyboard or mouse, and valid options', () => {
+  for (const input of [
+    {},
+    { scope: 'global' },
+    { keyboard: { keys: ['Not A Key'] } },
+    { keyboard: { keys: ['KeyA', 'KeyA'] } },
+    { keyboard: {}, scope: 'everywhere' },
+    { mouse: { buttons: [5] } },
+    { keyboard: {}, midi: {} },
   ]) {
-    assert.equal(code(perms({ 'input:keyboard': decl })), 'PACK_MANIFEST_SCHEMA');
+    assert.equal(code(perms(control(input))), 'PACK_MANIFEST_SCHEMA', JSON.stringify(input));
   }
-  assert.equal(code(perms({ 'input:mouse': { buttons: [5] } })), 'PACK_MANIFEST_SCHEMA');
+});
+
+test('narrow input can share a pack with network, even one permission', () => {
+  const narrow = [
+    { keyboard: { keys: keys(1) } },
+    { keyboard: { keys: keys(8) } },
+    { mouse: { buttons: [0, 3, 4] } },
+    { keyboard: { keys: ['ArrowRight'] }, mouse: { buttons: [3] }, scope: 'focused' },
+  ];
+  for (const input of narrow) {
+    assert.equal(
+      code(perms({ ...control(input), 'scripts:write': NET })),
+      null,
+      JSON.stringify(input)
+    );
+    assert.equal(
+      code(perms(control(input, NET))),
+      null,
+      `same permission ${JSON.stringify(input)}`
+    );
+  }
+});
+
+test('wide input can have any size when there is no network', () => {
+  const wide = { keyboard: {}, mouse: { wheel: true, position: true }, scope: 'global' };
+  assert.equal(code(perms(control(wide))), null);
+  assert.equal(
+    code(perms({ ...control({ keyboard: {} }), 'scripts:write': { network: [] } })),
+    null
+  );
+});
+
+test('wide input with network says which limit it broke', () => {
+  const cases = [
+    [{ keyboard: {} }, 'keyboard needs a keys list'],
+    [{ keyboard: { keys: keys(9) } }, 'at most 8 keys'],
+    [{ mouse: {} }, 'mouse needs a buttons list'],
+    [{ mouse: { buttons: [0, 1, 2, 3] } }, 'at most 3 buttons'],
+    [{ mouse: { buttons: [0], wheel: true } }, 'the wheel'],
+    [{ mouse: { buttons: [0], position: true } }, 'pointer position'],
+    [{ keyboard: { keys: ['Space'] }, scope: 'global' }, "scope can't be global"],
+  ];
+  for (const [input, says] of cases) {
+    for (const permissions of [
+      { ...control(input), 'scripts:write': NET },
+      control(input, NET),
+    ]) {
+      const [c, message] = parse(perms(permissions));
+      assert.equal(c, 'PACK_INPUT_PACK_NETWORK', JSON.stringify(input));
+      assert.ok(message.includes(says), message);
+    }
+  }
 });
 
 test('key settings take a key code, or nothing', () => {
@@ -89,35 +137,6 @@ test('key settings take a key code, or nothing', () => {
     settings: [{ key: 'k', type: 'key', label: 'K', default: 'Not A Key' }],
   });
   assert.equal(code(bad), 'PACK_MANIFEST_SCHEMA');
-});
-
-test('a pack that reads input cant declare network on any permission', () => {
-  const m = perms({
-    'input:keyboard': { keys: ['Space'] },
-    'scripts:write': { network: ['https://api.example.com'] },
-  });
-  assert.equal(code(m), 'PACK_INPUT_PACK_NETWORK');
-  // The permission-level case keeps its own code.
-  assert.equal(
-    code(perms({ 'input:keyboard': { network: ['https://api.example.com'] } })),
-    'PACK_INPUT_NETWORK'
-  );
-  // Network without input is fine, and so is input with no sites anywhere.
-  assert.equal(
-    code(
-      perms({
-        'scripts:write': { network: ['https://api.example.com'] },
-        'prompter:events': {},
-      })
-    ),
-    null
-  );
-  assert.equal(
-    code(
-      perms({ 'input:keyboard': {}, 'scripts:write': { network: [] }, 'prompter:control': {} })
-    ),
-    null
-  );
 });
 
 // top -> a -> b, each with the given permissions.
@@ -152,7 +171,7 @@ function chain(top, a, b) {
     ...nested('com.example.b', pack('com.example.b', b)),
   ];
 }
-const bundleCode = (entries) => {
+const bundle = (entries) => {
   try {
     validateEntries(entries, app);
   } catch (e) {
@@ -161,19 +180,25 @@ const bundleCode = (entries) => {
   return [null, ''];
 };
 
-test('a pack that reads input cant include a pack with network, at any depth', () => {
-  const input = { 'input:keyboard': {} };
-  const net = { 'scripts:write': { network: ['https://api.example.com'] } };
+test('a bundle with network keeps every input narrow, at any depth and direction', () => {
+  const narrow = control({ keyboard: { keys: ['ArrowRight', 'ArrowLeft'] } });
+  const wide = control({ keyboard: {} });
+  const net = { 'scripts:write': NET };
 
-  // The top reads input; the network is two levels down.
-  const [deep, message] = bundleCode(chain(input, {}, net));
+  // Wide input at the top, network two levels down.
+  const [deep, message] = bundle(chain(wide, {}, net));
   assert.equal(deep, 'PACK_INPUT_PACK_NETWORK');
-  assert.ok(message.startsWith('packs/com.example.b/'), message);
+  assert.ok(message.includes('keyboard needs a keys list'), message);
+  // Wide input in the middle, and the converse: network at the top, wide input included.
+  assert.equal(bundle(chain({}, wide, net))[0], 'PACK_INPUT_PACK_NETWORK');
+  const [converse, where] = bundle(chain(net, {}, wide));
+  assert.equal(converse, 'PACK_INPUT_PACK_NETWORK');
+  assert.ok(where.startsWith('packs/com.example.b/'), where);
 
-  // A pack in the middle reads input and includes the network pack.
-  assert.equal(bundleCode(chain({}, input, net))[0], 'PACK_INPUT_PACK_NETWORK');
-
-  // No input anywhere: network in a bundle is fine.
-  assert.equal(bundleCode(chain({}, net, net))[0], null);
-  assert.equal(bundleCode(chain(input, {}, input))[0], null);
+  // Narrow input is fine next to network, in either direction.
+  assert.equal(bundle(chain(narrow, {}, net))[0], null);
+  assert.equal(bundle(chain(net, {}, narrow))[0], null);
+  // No network anywhere: wide input is fine. No input: network is fine.
+  assert.equal(bundle(chain(wide, {}, wide))[0], null);
+  assert.equal(bundle(chain({}, net, net))[0], null);
 });

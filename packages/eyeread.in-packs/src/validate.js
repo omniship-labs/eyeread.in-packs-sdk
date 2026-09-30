@@ -4,8 +4,8 @@
 import { FILES_JSON, readFolder, readZip, readZipFile, SIGNATURE_FILE } from './archive.js';
 import { PackError } from './errors.js';
 import { compareFilesLists, computeFilesList, packHash, parseFilesList } from './filesList.js';
+import { hasSites, tooWide } from './input.js';
 import { parseManifest } from './manifest.js';
-import { isInputPermission } from './schema.js';
 
 export const MAX_INCLUDED = 32;
 export const MAX_DEPTH = 4;
@@ -193,27 +193,21 @@ export function validateEntries(entries, appVersion) {
   return { top, included, all: () => [top, ...included] };
 }
 
-// A pack that reads input can't declare `network`, and neither can any pack it
-// includes, at any depth: a bundle is one install, and its sandboxes share app
-// state, so input could otherwise be carried out by an included pack that has
-// `net`. (A pack's own permissions are checked in manifest.js.)
+// If any pack in a bundle declares `network` and any pack in it reads input,
+// every input declaration in the bundle must be narrow (`tooWide`). A bundle is
+// one install, and its sandboxes share app state, so input could otherwise be
+// carried out by a pack that has `net`; narrow input leaks next to nothing.
+// (One pack's own permissions are checked in manifest.js; this covers the rest
+// of the bundle, in either direction.)
 function checkInputBundle(top, included) {
-  const byId = new Map(included.map((p) => [p.manifest.id, p]));
-  const readsInput = (p) => Object.keys(p.manifest.permissions).some(isInputPermission);
-  const hasNetwork = (p) =>
-    Object.values(p.manifest.permissions).some((d) => (d.network ?? []).length > 0);
-  for (const root of [top, ...included].filter(readsInput)) {
-    const stack = root.manifest.includes.map((i) => i.id);
-    const seen = new Set();
-    while (stack.length > 0) {
-      const id = stack.pop();
-      const pack = byId.get(id);
-      if (!pack || seen.has(id)) continue;
-      seen.add(id);
-      if (hasNetwork(pack)) {
-        throw new PackError('PACK_INPUT_PACK_NETWORK').inFolder(`packs/${id}/`);
-      }
-      stack.push(...pack.manifest.includes.map((i) => i.id));
+  const all = [top, ...included];
+  if (!all.some((p) => Object.values(p.manifest.permissions).some(hasSites))) return;
+  for (const pack of all) {
+    for (const decl of Object.values(pack.manifest.permissions)) {
+      const reason = decl.input ? tooWide(decl.input) : null;
+      if (!reason) continue;
+      const error = new PackError('PACK_INPUT_PACK_NETWORK', { reason });
+      throw pack === top ? error : error.inFolder(`packs/${pack.manifest.id}/`);
     }
   }
 }
