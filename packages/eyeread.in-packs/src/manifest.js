@@ -3,6 +3,7 @@
 // src-tauri/src/packs/manifest.rs (steps 2-6 of the spec's check order).
 import semver from 'semver';
 import { PackError } from './errors.js';
+import { hasSites, tooWide } from './input.js';
 import { PERMISSIONS, SUPPORTED_API_VERSIONS, siteIsValid, validatePack } from './schema.js';
 
 export { PERMISSIONS };
@@ -49,6 +50,13 @@ export function parseManifest(bytes, appVersion) {
     }
   }
 
+  if (value?.permissions && typeof value.permissions === 'object') {
+    for (const [permission, decl] of Object.entries(value.permissions)) {
+      checkPermissionOptions(permission, decl);
+    }
+    checkInputPack(value.permissions);
+  }
+
   if (!validatePack(value)) {
     const err = validatePack.errors[0];
     throw new PackError('PACK_MANIFEST_SCHEMA', {
@@ -84,6 +92,41 @@ export function parseManifest(bytes, appVersion) {
   return manifest;
 }
 
+// `input` belongs to `prompter:control` only, and needs keyboard or mouse. The
+// schema can't say the first, and its message for the second prints the whole
+// object.
+const INPUT_PERMISSION = 'prompter:control';
+
+function checkPermissionOptions(permission, decl) {
+  if (!decl || typeof decl !== 'object' || Array.isArray(decl)) return;
+  if (!Object.hasOwn(decl, 'input')) return;
+  if (permission !== INPUT_PERMISSION) {
+    throw new PackError('PACK_PERMISSION_OPTION', { permission, option: 'input' });
+  }
+  const input = decl.input;
+  if (input && typeof input === 'object' && !input.keyboard && !input.mouse) {
+    throw new PackError('PACK_MANIFEST_SCHEMA', {
+      pointer: `/permissions/${permission}/input`,
+      detail: 'needs keyboard or mouse',
+    });
+  }
+}
+
+// A pack that declares `network` anywhere can read input only if the input is
+// narrow (`tooWide`). The sandbox split alone isn't enough to keep input in:
+// sandboxes share app state (the prompter's position), so input could be
+// encoded into state and read back out by a sandbox that has `net`. Narrow
+// input leaks next to nothing. The same goes for every pack it includes;
+// validate.js checks that once the bundle is read.
+function checkInputPack(permissions) {
+  if (!Object.values(permissions).some(hasSites)) return;
+  for (const decl of Object.values(permissions)) {
+    if (!decl?.input || typeof decl.input !== 'object') continue;
+    const reason = tooWide(decl.input);
+    if (reason) throw new PackError('PACK_INPUT_PACK_NETWORK', { reason });
+  }
+}
+
 function checkSettings(settings) {
   const keys = new Set();
   for (const s of settings) {
@@ -92,6 +135,7 @@ function checkSettings(settings) {
     keys.add(s.key);
     switch (s.type) {
       case 'toggle':
+      case 'key':
         break;
       case 'select': {
         const values = new Set();

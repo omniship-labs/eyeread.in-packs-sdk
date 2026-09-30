@@ -4,6 +4,7 @@
 import { FILES_JSON, readFolder, readZip, readZipFile, SIGNATURE_FILE } from './archive.js';
 import { PackError } from './errors.js';
 import { compareFilesLists, computeFilesList, packHash, parseFilesList } from './filesList.js';
+import { hasSites, tooWide } from './input.js';
 import { parseManifest } from './manifest.js';
 
 export const MAX_INCLUDED = 32;
@@ -188,7 +189,27 @@ export function validateEntries(entries, appVersion) {
       throw err.inFolder(folder);
     }
   }
+  checkInputBundle(top, included);
   return { top, included, all: () => [top, ...included] };
+}
+
+// If any pack in a bundle declares `network` and any pack in it reads input,
+// every input declaration in the bundle must be narrow (`tooWide`). A bundle is
+// one install, and its sandboxes share app state, so input could otherwise be
+// carried out by a pack that has `net`; narrow input leaks next to nothing.
+// (One pack's own permissions are checked in manifest.js; this covers the rest
+// of the bundle, in either direction.)
+function checkInputBundle(top, included) {
+  const all = [top, ...included];
+  if (!all.some((p) => Object.values(p.manifest.permissions).some(hasSites))) return;
+  for (const pack of all) {
+    for (const decl of Object.values(pack.manifest.permissions)) {
+      const reason = decl.input ? tooWide(decl.input) : null;
+      if (!reason) continue;
+      const error = new PackError('PACK_INPUT_PACK_NETWORK', { reason });
+      throw pack === top ? error : error.inFolder(`packs/${pack.manifest.id}/`);
+    }
+  }
 }
 
 export async function validateZipFile(path, appVersion) {
