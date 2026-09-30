@@ -3,7 +3,13 @@
 // src-tauri/src/packs/manifest.rs (steps 2-6 of the spec's check order).
 import semver from 'semver';
 import { PackError } from './errors.js';
-import { PERMISSIONS, SUPPORTED_API_VERSIONS, siteIsValid, validatePack } from './schema.js';
+import {
+  PERMISSIONS,
+  SUPPORTED_API_VERSIONS,
+  isInputPermission,
+  siteIsValid,
+  validatePack,
+} from './schema.js';
 
 export { PERMISSIONS };
 
@@ -49,6 +55,12 @@ export function parseManifest(bytes, appVersion) {
     }
   }
 
+  if (value?.permissions && typeof value.permissions === 'object') {
+    for (const [permission, decl] of Object.entries(value.permissions)) {
+      checkPermissionOptions(permission, decl);
+    }
+  }
+
   if (!validatePack(value)) {
     const err = validatePack.errors[0];
     throw new PackError('PACK_MANIFEST_SCHEMA', {
@@ -84,6 +96,27 @@ export function parseManifest(bytes, appVersion) {
   return manifest;
 }
 
+// Input permissions can't declare `network`, and each option belongs to
+// particular permissions. The schema can't say either.
+function checkPermissionOptions(permission, decl) {
+  if (!decl || typeof decl !== 'object' || Array.isArray(decl)) return;
+  const input = isInputPermission(permission);
+  if (input && Object.hasOwn(decl, 'network')) {
+    throw new PackError('PACK_INPUT_NETWORK', { permission });
+  }
+  for (const option of Object.keys(decl)) {
+    const allowed =
+      option === 'scope'
+        ? input
+        : option === 'keys'
+          ? permission === 'input:keyboard'
+          : option === 'buttons' || option === 'position'
+            ? permission === 'input:mouse'
+            : true; // network, and unknown fields (the schema rejects those)
+    if (!allowed) throw new PackError('PACK_PERMISSION_OPTION', { permission, option });
+  }
+}
+
 function checkSettings(settings) {
   const keys = new Set();
   for (const s of settings) {
@@ -92,6 +125,7 @@ function checkSettings(settings) {
     keys.add(s.key);
     switch (s.type) {
       case 'toggle':
+      case 'key':
         break;
       case 'select': {
         const values = new Set();

@@ -37,4 +37,11 @@ export const PERMISSIONS = [
   'prompter:control',
   'prompter:events',
   'files:import',
+  'input:keyboard',
+  'input:mouse',
+  'input:midi',
+  'input:gamepad',
 ];
+
+/** Permissions that read the user's input. They can't declare `network`. */
+export const isInputPermission = (permission) => permission.startsWith('input:');
