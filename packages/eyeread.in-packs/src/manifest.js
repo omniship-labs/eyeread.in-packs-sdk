@@ -3,13 +3,7 @@
 // src-tauri/src/packs/manifest.rs (steps 2-6 of the spec's check order).
 import semver from 'semver';
 import { PackError } from './errors.js';
-import {
-  LICENSES,
-  PERMISSIONS,
-  SUPPORTED_API_VERSIONS,
-  siteIsValid,
-  validatePack,
-} from './schema.js';
+import { PERMISSIONS, SUPPORTED_API_VERSIONS, siteIsValid, validatePack } from './schema.js';
 
 export { PERMISSIONS };
 
@@ -25,7 +19,7 @@ function schemaErrorPointer(err) {
 
 /**
  * Parse `pack.json` bytes and run the spec's checks: readable JSON,
- * `apiVersion`, license, network sites, the schema, then app version and
+ * `apiVersion`, network sites, the schema, then app version and
  * settings.
  */
 export function parseManifest(bytes, appVersion) {
@@ -42,11 +36,6 @@ export function parseManifest(bytes, appVersion) {
         apiVersion: value.apiVersion,
         supported: SUPPORTED_API_VERSIONS.join(', '),
       });
-    }
-  }
-  if (typeof value?.license === 'string') {
-    if (!LICENSES.includes(value.license)) {
-      throw new PackError('PACK_LICENSE', { license: value.license });
     }
   }
   if (value?.permissions && typeof value.permissions === 'object') {

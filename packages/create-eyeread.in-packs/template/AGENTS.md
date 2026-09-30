@@ -10,11 +10,11 @@ what the installer enforces.
 
 ## The contract, in short
 
-- `pack.json` is the manifest — `id`, `version`, `license` (must be an AGPL
-  identifier) and `main` never move or get invented ad hoc; unknown fields are
-  rejected outright.
-- `LICENSE` must contain the real AGPL-3.0 text (already here — don't replace
-  it with a summary or a different license).
+- `pack.json` is the manifest — `id`, `version`, `license` and `main` never
+  move or get invented ad hoc; unknown fields are rejected outright.
+- The pack starts out AGPL-3.0 (`LICENSE` and `license` in `pack.json`). Any
+  license is allowed; only change it if the author asks, and then update both
+  `license` and `LICENSE` together, using the license's real text.
 - `main.js` (or whatever `pack.json`'s `main` names) only talks to the outside
   world through the global `eyeread` object, registered with
   `eyeread.on(permission, handler)` **synchronously at the top of the module**.

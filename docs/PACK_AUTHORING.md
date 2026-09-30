@@ -44,7 +44,7 @@ anything else, with no partial credit):
 
 - **`id`**: lowercase reverse-DNS, at least one dot, 3–100 chars — `com.example.thing`, never changed after publishing.
 - **`version`**: strict semver, no build metadata (`1.2.0`, `2.0.0-beta.1` — not `1.2`, not `1.2.0+build5`).
-- **`license`**: exactly `AGPL-3.0-only`, `AGPL-3.0-or-later` or `AGPL-3.0` — nothing else installs. The pack's root must also have a `LICENSE`, `LICENSE.md`, `LICENSE.txt` or `COPYING` file containing the text `GNU AFFERO GENERAL PUBLIC LICENSE` (any letter case). Copy the real AGPL-3.0 text — don't paraphrase or stub it.
+- **`license`**: any license the author chooses, 1–100 characters, ideally an SPDX identifier (`MIT`, `Apache-2.0`, `AGPL-3.0-or-later`). The app shows it to users and doesn't check it. A `LICENSE` file is optional; if the author picked a license, include its real text. What _is_ required, whatever the license, is readable source.
 - **`main`**: an ES module, `.js` or `.mjs`. It can `import` other files in the pack by relative path; nothing remote. Required unless the pack only bundles other packs (`includes`, no `permissions`).
 - **Unknown top-level fields are rejected** — the schema is `additionalProperties: false`. Don't add fields that aren't in the table below.
 - **`permissions`**: a map from permission name to `{ "network"?: [sites] }` — see below. Omit permissions the pack doesn't use; declaring one you don't handle in code does nothing harmful, but don't do it.
@@ -178,7 +178,7 @@ npx @omniship-labs/eyeread.in-packs build       # writes <id>-<version>.zip, wit
 `validate` runs the **exact same checks** the app's installer runs (same spec,
 same error codes and wording) — treat a `validate` failure as authoritative, not
 as something to route around. Its error codes match
-[`spec/errors.json`](../spec/errors.json) 1:1 (`PACK_LICENSE_FILE`,
+[`spec/errors.json`](../spec/errors.json) 1:1 (`PACK_MAIN_MISSING`,
 `PACK_MINIFIED`, `PACK_NETWORK_SITE`, `PACK_MANIFEST_SCHEMA`, …) — if you don't
 recognize a code, that file has the exact wording and
 [`spec/FORMAT.md`](../spec/FORMAT.md) explains the rule behind it. Don't guess

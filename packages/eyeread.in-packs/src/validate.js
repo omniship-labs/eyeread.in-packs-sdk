@@ -11,8 +11,6 @@ export const MAX_DEPTH = 4;
 const MAX_LINE_CHARS = 1000;
 const MINIFIED_MIN_BYTES = 2048;
 const MINIFIED_BYTES_PER_LINE = 200;
-const LICENSE_FILES = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING'];
-const LICENSE_TEXT = 'gnu affero general public license';
 
 /**
  * Readable source rule: no line over 1000 characters, and a file of 2 KiB or
@@ -43,12 +41,6 @@ function validatePackEntries(entries, folder, appVersion) {
   const manifestEntry = find(entries, 'pack.json');
   if (!manifestEntry) throw new PackError('PACK_MANIFEST_MISSING', {});
   const manifest = parseManifest(manifestEntry.bytes, appVersion);
-
-  const hasLicense = LICENSE_FILES.some((name) => {
-    const e = find(entries, name);
-    return e && Buffer.from(e.bytes).toString('utf8').toLowerCase().includes(LICENSE_TEXT);
-  });
-  if (!hasLicense) throw new PackError('PACK_LICENSE_FILE', {});
 
   if (manifest.main) {
     if (!find(entries, manifest.main)) {

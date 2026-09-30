@@ -31,7 +31,6 @@ export function siteIsValid(site) {
 }
 
 export const SUPPORTED_API_VERSIONS = [1];
-export const LICENSES = ['AGPL-3.0-only', 'AGPL-3.0-or-later', 'AGPL-3.0'];
 export const PERMISSIONS = [
   'scripts:write',
   'prompter:load',
