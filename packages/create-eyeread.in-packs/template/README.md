@@ -26,12 +26,21 @@ npx @omniship-labs/eyeread.in-packs build       # writes {{ID}}-<version>.zip
 
 ## Publish
 
+Anyone can share the zip as a Community pack. For **✓ Verified**:
+
 1. Push this folder to its own repository.
-2. Open a pull request against
+2. Publish a release: tag the version (for example `v1.0.0`) and attach the
+   zip from `build`. The zip's URL must download directly and never change.
+3. Open a pull request against
    [`omniship-labs/eyeread.in-packs`](https://github.com/omniship-labs/eyeread.in-packs)
-   with your pack's source. CI runs `validate` and a license check; a CLA and a
-   maintainer review follow.
-3. Once approved and signed, your pack installs as **✓ Verified**.
+   adding an entry with your repo, the tag, its commit, the zip URL and the
+   pack hash `build` prints. CI checks the zip and a maintainer reviews it.
+4. Once approved, OmniShip signs it and stores the signature with your entry.
+   Add the signature to your zip as `files.json.minisig` and re-upload it, so
+   hand-installed copies show as Verified too.
+
+Your code stays in your repo. If the release or its zip disappears, the pack
+loses its Verified mark.
 
 ## License
 
