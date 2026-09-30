@@ -1,6 +1,9 @@
 // `build` turns a pack source folder into a zip with a fresh files.json, and
 // doing it twice from the same input produces byte-identical output.
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -36,4 +39,17 @@ test('build ignores a stale files.json already on disk', async () => {
   // trusted the stale one and it didn't match, so this also covers that path).
   const { bundle } = await buildPack(join(fixturesDir, 'valid-files-json'), '1.0.0');
   assert.equal(bundle.top.manifest.id, 'com.example.hashed');
+});
+
+test("build skips a top-level .git, so a pack folder can be a repo's root", async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'eyeread-git-root-'));
+  try {
+    await cp(join(fixturesDir, 'valid-minimal'), dir, { recursive: true });
+    const plain = await buildPack(dir, '1.0.0');
+    execFileSync('git', ['init', '--quiet'], { cwd: dir });
+    const inRepo = await buildPack(dir, '1.0.0');
+    assert.ok(inRepo.bytes.equals(plain.bytes));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

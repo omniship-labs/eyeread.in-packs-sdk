@@ -28,13 +28,31 @@ npx @omniship-labs/eyeread.in-packs build       # writes {{ID}}-<version>.zip
 
 Anyone can share the zip as a Community pack. For **✓ Verified**:
 
-1. Push this folder to its own repository.
-2. Publish a release: tag the version (for example `v1.0.0`) and attach the
-   zip from `build`. The zip's URL must download directly and never change.
-3. Open a pull request against
-   [`omniship-labs/eyeread.in-packs`](https://github.com/omniship-labs/eyeread.in-packs)
-   adding an entry with your repo, the tag, its commit, the zip URL and the
-   pack hash `build` prints. CI checks the zip and a maintainer reviews it.
+1. Push this folder to a public repository (it can be the repo's root).
+2. Commit, then tag the version and push the tag:
+
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+3. Submit it. On GitHub, with the [GitHub CLI](https://cli.github.com) logged in:
+
+   ```bash
+   npx @omniship-labs/eyeread.in-packs submit --release
+   ```
+
+   `--release` creates the GitHub release for the tag with the zip attached
+   (leave it off if you've already attached the zip yourself). `submit` checks
+   the released zip matches this folder at the tag, then opens a pull request
+   against
+   [`omniship-labs/eyeread.in-packs`](https://github.com/omniship-labs/eyeread.in-packs).
+   CI checks it and a maintainer reviews it.
+
+   Hosting the zip somewhere else? Pass `--url <zip url>`. The URL must
+   download directly and never change. Without the GitHub CLI, or with
+   `--dry-run`, `submit` prints the entry and a link to add it by hand.
+
 4. Once approved, OmniShip signs it and stores the signature with your entry.
    Add the signature to your zip as `files.json.minisig` and re-upload it, so
    hand-installed copies show as Verified too.
