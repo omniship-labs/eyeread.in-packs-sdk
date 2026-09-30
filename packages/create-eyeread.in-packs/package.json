@@ -1,6 +1,6 @@
 {
   "name": "@omniship-labs/create-eyeread.in-packs",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Scaffold a new eyeread.in pack: `npm create @omniship-labs/eyeread.in-packs my-pack`.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
