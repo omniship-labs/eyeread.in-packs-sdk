@@ -96,6 +96,6 @@ signing once covers both. A bot checks automatically on your first PR.
 
 ## License
 
-AGPL-3.0-or-later, the same as eyeread.in. Packs must also be AGPL-licensed to be installed.
+AGPL-3.0-or-later, the same as eyeread.in. Packs you build with it can use any license; eyeread.in only requires readable source.
 Each of the three published packages includes its own copy of `LICENSE` (vendored from the root by
 `npm run build`, like `spec/`), so it's self-contained once installed on its own.

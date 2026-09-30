@@ -20,10 +20,10 @@ test('validate exits 0 on a valid pack folder', async () => {
 
 test('validate exits non-zero with the spec error code on an invalid pack', async () => {
   await assert.rejects(
-    run('node', [cli, 'validate', join(fixturesDir, 'invalid-license-mit')]),
+    run('node', [cli, 'validate', join(fixturesDir, 'invalid-main-missing')]),
     (err) => {
       assert.equal(err.code, 1);
-      assert.match(err.stderr, /PACK_LICENSE/);
+      assert.match(err.stderr, /PACK_MAIN_MISSING/);
       return true;
     }
   );

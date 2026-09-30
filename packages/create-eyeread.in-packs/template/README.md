@@ -35,5 +35,6 @@ npx @omniship-labs/eyeread.in-packs build       # writes {{ID}}-<version>.zip
 
 ## License
 
-This pack must stay AGPL-3.0 (the same license as eyeread.in itself) to be
-installable — see [`LICENSE`](LICENSE).
+This pack starts out under the AGPL-3.0 — see [`LICENSE`](LICENSE). You can
+use any license you like: change `license` in `pack.json` and replace
+`LICENSE` to match. Whatever the license, eyeread.in requires readable source.
